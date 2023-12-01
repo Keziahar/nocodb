@@ -62,17 +62,22 @@ async function _formulaQueryBuilder(
   model: Model,
   aliasToColumn: Record<string, () => Promise<{ builder: any }>> = {},
   tableAlias?: string,
+  parsedTree?: any,
 ) {
   const knex = baseModelSqlv2.dbDriver;
 
   const columns = await model.getColumns();
-  // formula may include double curly brackets in previous version
-  // convert to single curly bracket here for compatibility
-  // const _tree1 = jsep(_tree.replaceAll('{{', '{').replaceAll('}}', '}'));
-  const tree = validateFormulaAndExtractTreeWithType(
-    _tree.replaceAll('{{', '{').replaceAll('}}', '}'),
-    columns,
-  );
+
+  let tree = parsedTree;
+  if (!tree) {
+    // formula may include double curly brackets in previous version
+    // convert to single curly bracket here for compatibility
+    // const _tree1 = jsep(_tree.replaceAll('{{', '{').replaceAll('}}', '}'));
+    tree = validateFormulaAndExtractTreeWithType(
+      _tree.replaceAll('{{', '{').replaceAll('}}', '}'),
+      columns,
+    );
+  }
 
   const columnIdToUidt = {};
 
@@ -92,6 +97,7 @@ async function _formulaQueryBuilder(
               model,
               { ...aliasToColumn, [col.id]: null },
               tableAlias,
+              formulOption.getParsedTree(),
             );
             builder.sql = '(' + builder.sql + ')';
             return {
@@ -412,6 +418,7 @@ async function _formulaQueryBuilder(
                     '',
                     lookupModel,
                     aliasToColumn,
+                    formulaOption.getParsedTree()
                   );
                   if (isMany) {
                     const qb = selectQb;
@@ -967,6 +974,9 @@ export default async function formulaQueryBuilderv2(
     model,
     aliasToColumn,
     tableAlias,
+    await column
+      ?.getColOptions<FormulaColumn>()
+      .then((formula) => formula?.getParsedTree()),
   );
 
   if (!validateFormula) return qb;
