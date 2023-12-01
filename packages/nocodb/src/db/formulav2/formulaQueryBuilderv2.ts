@@ -20,6 +20,7 @@ import {
   validateDateWithUnknownFormat,
 } from '~/helpers/formulaFnHelper';
 import FormulaColumn from '~/models/FormulaColumn';
+import { Source } from '~/models';
 
 const logger = new Logger('FormulaQueryBuilderv2');
 
@@ -75,10 +76,13 @@ async function _formulaQueryBuilder(
     // formula may include double curly brackets in previous version
     // convert to single curly bracket here for compatibility
     // const _tree1 = jsep(_tree.replaceAll('{{', '{').replaceAll('}}', '}'));
-    tree = validateFormulaAndExtractTreeWithType(
-      _tree.replaceAll('{{', '{').replaceAll('}}', '}'),
+    tree = validateFormulaAndExtractTreeWithType({
+      formula: _tree.replaceAll('{{', '{').replaceAll('}}', '}'),
       columns,
-    );
+      clientOrSqlUi: await Source.get(column.source_id).then(
+        (source) => source.type,
+      ),
+    });
 
     // populate and save parsedTree to column if not exist
     if (column) {
