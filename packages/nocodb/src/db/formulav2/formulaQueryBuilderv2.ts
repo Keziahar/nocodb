@@ -1,5 +1,9 @@
 import jsep from 'jsep';
-import { jsepCurlyHook, UITypes } from 'nocodb-sdk';
+import {
+  jsepCurlyHook,
+  UITypes,
+  validateFormulaAndExtractTreeWithType,
+} from 'nocodb-sdk';
 import mapFunctionName from '../mapFunctionName';
 import genRollupSelectv2 from '../genRollupSelectv2';
 import type Column from '~/models/Column';
@@ -61,14 +65,19 @@ async function _formulaQueryBuilder(
 ) {
   const knex = baseModelSqlv2.dbDriver;
 
+  const columns = await model.getColumns();
   // formula may include double curly brackets in previous version
   // convert to single curly bracket here for compatibility
-  const tree = jsep(_tree.replaceAll('{{', '{').replaceAll('}}', '}'));
+  // const _tree1 = jsep(_tree.replaceAll('{{', '{').replaceAll('}}', '}'));
+  const tree = validateFormulaAndExtractTreeWithType(
+    _tree.replaceAll('{{', '{').replaceAll('}}', '}'),
+    columns,
+  );
 
   const columnIdToUidt = {};
 
   // todo: improve - implement a common solution for filter, sort, formula, etc
-  for (const col of await model.getColumns()) {
+  for (const col of columns) {
     columnIdToUidt[col.id] = col.uidt;
     if (col.id in aliasToColumn) continue;
     switch (col.uidt) {
