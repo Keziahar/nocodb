@@ -1220,10 +1220,6 @@ export class ColumnsService {
           colBody.formula_raw || colBody.formula,
           table.columns,
         );
-        console.log(
-          colBody.formula_raw ||
-            colBody.formula?.replaceAll('{{', '{').replaceAll('}}', '}'),
-        );
         colBody.parsed_tree = validateFormulaAndExtractTreeWithType({
           // formula may include double curly brackets in previous version
           // convert to single curly bracket here for compatibility
