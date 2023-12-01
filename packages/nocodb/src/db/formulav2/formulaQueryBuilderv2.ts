@@ -1,5 +1,6 @@
 import jsep from 'jsep';
 import {
+  FormulaDataTypes,
   jsepCurlyHook,
   UITypes,
   validateFormulaAndExtractTreeWithType,
@@ -20,7 +21,6 @@ import {
   validateDateWithUnknownFormat,
 } from '~/helpers/formulaFnHelper';
 import FormulaColumn from '~/models/FormulaColumn';
-import { Source } from '~/models';
 
 const logger = new Logger('FormulaQueryBuilderv2');
 
@@ -834,6 +834,30 @@ async function _formulaQueryBuilder(
 
       if (pt.operator === '==') {
         pt.operator = '=';
+        // if left/right is of different type, convert to string and compare
+        if (
+          pt.left.dataType !== pt.right.dataType &&
+          [pt.left.dataType, pt.right.dataType].every(
+            (type) => type !== FormulaDataTypes.NULL,
+          )
+        ) {
+          pt.left = {
+            type: 'CallExpression',
+            arguments: [pt.left],
+            callee: {
+              type: 'Identifier',
+              name: 'STRING',
+            },
+          };
+          pt.right = {
+            type: 'CallExpression',
+            arguments: [pt.right],
+            callee: {
+              type: 'Identifier',
+              name: 'STRING',
+            },
+          };
+        }
       }
 
       if (pt.operator === '/') {
