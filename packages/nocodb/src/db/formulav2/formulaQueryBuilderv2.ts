@@ -4,6 +4,7 @@ import {
   UITypes,
   validateFormulaAndExtractTreeWithType,
 } from 'nocodb-sdk';
+import { Logger } from '@nestjs/common';
 import mapFunctionName from '../mapFunctionName';
 import genRollupSelectv2 from '../genRollupSelectv2';
 import type Model from '~/models/Model';
