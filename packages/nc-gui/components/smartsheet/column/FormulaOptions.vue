@@ -152,6 +152,7 @@ function parseAndValidateFormula(formula: string) {
 }
 
 function validateAgainstMeta(parsedTree: any, errors = new Set(), typeErrors = new Set()) {
+  let type: formulaTypes;
   if (parsedTree.type === JSEPNode.CALL_EXP) {
     const calleeName = parsedTree.callee.name.toUpperCase()
     // validate function name
@@ -169,6 +170,7 @@ function validateAgainstMeta(parsedTree: any, errors = new Set(), typeErrors = n
         errors.add(t('msg.formula.maxRequiredArgumentsFormula', { maxRequiredArguments: validation.args.max, calleeName }))
       }
     }
+
     parsedTree.arguments.map((arg: Record<string, any>) => validateAgainstMeta(arg, errors))
 
     // validate data type
@@ -407,7 +409,7 @@ function validateAgainstMeta(parsedTree: any, errors = new Set(), typeErrors = n
   } else {
     errors.add(t('msg.formula.cantSaveFieldFormulaInvalid'))
   }
-  return errors
+  return {errors, type}
 }
 
 function validateAgainstType(parsedTree: any, expectedType: string, func: any, typeErrors = new Set()) {
