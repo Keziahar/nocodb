@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import type { ListItem as AntListItem } from 'ant-design-vue'
 import jsep from 'jsep'
 import type { ColumnType, FormulaType } from 'nocodb-sdk'
-import { UITypes, jsepCurlyHook, substituteColumnIdWithAliasInFormula } from 'nocodb-sdk'
+import { UITypes, jsepCurlyHook, substituteColumnIdWithAliasInFormula, validateFormulaAndExtractTreeWithType } from 'nocodb-sdk'
 import {
   MetaInj,
   NcAutocompleteTree,
@@ -61,10 +61,15 @@ const validators = {
       validator: (_: any, formula: any) => {
         return new Promise<void>((resolve, reject) => {
           if (!formula?.trim()) return reject(new Error('Required'))
-          const res = parseAndValidateFormula(formula)
-          if (res !== true) {
-            return reject(new Error(res))
+
+          try {
+            validateFormulaAndExtractTreeWithType(formula, supportedColumns.value)
+          } catch (e: any) {
+            return reject(new Error(e.message))
           }
+          // if (res !== true) {
+          //   return reject(new Error(res))
+          // }
           resolve()
         })
       },
@@ -188,7 +193,7 @@ function validateAgainstMeta(parsedTree: any, errors = new Set(), typeErrors = n
       return validateAgainstMeta(arg, errors, typeErrors)
     })
 
-    const argsTypes = validateResult.map((v: any) => v.returnType);
+    const argsTypes = validateResult.map((v: any) => v.returnType)
 
     if (typeof validateResult[0].returnType === 'function') {
       returnType = formulas[calleeName].returnType(argsTypes)
@@ -228,7 +233,9 @@ function validateAgainstMeta(parsedTree: any, errors = new Set(), typeErrors = n
             typeErrors,
           )
         } else {
-          parsedTree.arguments.map((arg: Record<string, any>) => validateAgainstType(arg, expectedType, null, typeErrors, argsTypes))
+          parsedTree.arguments.map((arg: Record<string, any>) =>
+            validateAgainstType(arg, expectedType, null, typeErrors, argsTypes),
+          )
         }
       } else if (expectedType === formulaTypes.DATE) {
         if (calleeName === 'DATEADD') {
@@ -450,7 +457,13 @@ function validateAgainstMeta(parsedTree: any, errors = new Set(), typeErrors = n
   return { errors, returnType }
 }
 
-function validateAgainstType(parsedTree: any, expectedType: string, func: any, typeErrors = new Set(), argTypes: formulaTypes = []) {
+function validateAgainstType(
+  parsedTree: any,
+  expectedType: string,
+  func: any,
+  typeErrors = new Set(),
+  argTypes: formulaTypes = [],
+) {
   let type
   if (parsedTree === false || typeof parsedTree === 'undefined') {
     return typeErrors
