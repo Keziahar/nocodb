@@ -3,7 +3,13 @@ import type { Ref } from 'vue'
 import type { ListItem as AntListItem } from 'ant-design-vue'
 import jsep from 'jsep'
 import type { ColumnType, FormulaType } from 'nocodb-sdk'
-import { UITypes, jsepCurlyHook, substituteColumnIdWithAliasInFormula, validateFormulaAndExtractTreeWithType } from 'nocodb-sdk'
+import {
+  FormulaError,
+  UITypes,
+  jsepCurlyHook,
+  substituteColumnIdWithAliasInFormula,
+  validateFormulaAndExtractTreeWithType,
+} from 'nocodb-sdk'
 import {
   MetaInj,
   NcAutocompleteTree,
@@ -65,6 +71,10 @@ const validators = {
           try {
             validateFormulaAndExtractTreeWithType(formula, supportedColumns.value)
           } catch (e: any) {
+            if (e instanceof FormulaError && e.extra?.key) {
+              return reject(new Error(t(e.extra.key, e.extra)))
+            }
+
             return reject(new Error(e.message))
           }
           // if (res !== true) {
